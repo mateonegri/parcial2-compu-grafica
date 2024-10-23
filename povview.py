@@ -54,29 +54,83 @@ class Views(Gtk.Grid):
 
         self.objs = []
 
+         # Store current rotation angles and sphere parameters
+        self.current_rotation = {'x': 0, 'y': 0, 'z': 0}
+        self.current_subdiv = 25
+        self.current_size = 50
+        self.current_position = [[0.0, 0.0, 0.0]]
+
         self.views = {}
         for x, y, lbl in [(0, 0, 'xy'), (1, 0, 'yz'), (0, 1, 'zx')]:
             frame = Gtk.Frame(label = lbl, label_xalign = 0.04,
                         hexpand = True, vexpand = True)
             self.attach(frame, x, y, 1, 1)
 
-            canvas = GooCanvas.Canvas(
+            self.canvas = GooCanvas.Canvas(
                         automatic_bounds = True,
                         bounds_from_origin = False,
                         bounds_padding = 10)
-            frame.add(canvas)
-            self.views[lbl] = {'frame': frame, 'canvas': canvas}
+            frame.add(self.canvas)
+            self.views[lbl] = {'frame': frame, 'canvas': self.canvas}
 
     def add_object(self, obj):
+
+        self.clear_all()
 
         for item in obj:
             if item[0] == 'sphere':
                 # Here, we assume obj[1] is [position, radius] for the sphere
                 position = item[1][0]
+                self.current_position = position
                 radius = item[1][1]
+                self.current_size = radius
                 s = Sphere(position, radius)
                 self.objs.append(s)
                 s.draw_on(self.views)
+    
+    def clear(self):
+        """
+        Removes all items from all canvases in the views.
+        Does NOT reset the objects list to allow for updates.
+        """
+        for view_key in self.views:
+            canvas = self.views[view_key]['canvas']
+            root = canvas.get_root_item()
+            
+            # Remove all children from the root item
+            if root:
+                # Get the number of children
+                n_children = root.get_n_children()
+                
+                # Remove children from last to first to avoid indexing issues
+                for i in range(n_children - 1, -1, -1):
+                    child = root.get_child(i)
+                    if child:
+                        root.remove_child(i)
+
+    def clear_all(self):
+        """
+        Completely clears both the canvases and the objects list.
+        Use this when loading new objects, not when updating existing ones.
+        """
+        self.clear()
+        self.objs = []
+    
+    # Callback for subdivision slider
+    def on_subdiv_change(self, slider):
+        sliderValue = slider.get_value()
+        for s in self.objs:
+            s.update_sphere_subdivision(sliderValue, self.views)
+
+    # Callback for size slider
+    def on_size_change(self, slider):
+        sliderValue = slider.get_value()
+        for s in self.objs:
+            s.update_sphere_size(sliderValue, self.views)
+
+
+
+        
 
 class MainWindow(Gtk.Window):
     def __init__(self):
@@ -91,17 +145,37 @@ class MainWindow(Gtk.Window):
 
         self.views = Views()
 
+        # Create sliders for subdivision, rotation, and size
+        self.subdiv_slider = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL)
+        self.subdiv_slider.set_range(3, 50)  # Min 3 subdivisions, max 50
+        self.subdiv_slider.set_value(25)  # Default
+        subdiv_slider_value = self.subdiv_slider.get_value()
+        self.subdiv_slider.connect('value-changed', self.views.on_subdiv_change)
+
+        self.size_slider = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL)
+        self.size_slider.set_range(10, 200)  # Adjust the range as needed
+        self.size_slider.set_value(50)  # Default
+        size_slider_value = self.size_slider.get_value()
+        self.size_slider.connect('value-changed', self.views.on_size_change)
+
         grid = Gtk.Grid(vexpand = True)
         grid.attach(mm, 0, 0, 2, 1)
         grid.attach(cmd_entry, 0, 1, 2, 1)
         grid.attach(self.views, 0, 2, 2, 1)
+
+        # Attach sliders for subdivision, rotation, and size
+        grid.attach(Gtk.Label("Subdivision"), 0, 3, 1, 1)
+        grid.attach(self.subdiv_slider, 1, 3, 1, 1)
+        
+        grid.attach(Gtk.Label("Size"), 0, 4, 1, 1)
+        grid.attach(self.size_slider, 1, 4, 1, 1)
+
         self.add(grid)
         self.show_all()
 
 
     def run(self):
         Gtk.main()
-
 
     def make_main_menu(self):
         mm = Main_menu(['_File', '_Tests', '_Help'])

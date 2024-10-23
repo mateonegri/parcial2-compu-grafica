@@ -1,6 +1,6 @@
 
 sphere {
-    <0, 0, 0>, 20
+    <0, 0, 0>, 30
     pigment {
         color rgb <1, 1, 0>
     }

@@ -30,9 +30,9 @@ from gi.repository import Gtk, GooCanvas
 
 from math import cos, sin, pi
 from pdb import set_trace as st
+import numpy as np
 
 SUBDIV = 12
-
 
 class ThreeD_object:
     def __init__(self):
@@ -198,13 +198,11 @@ class Cone(ThreeD_object):
                         line_width = 1, stroke_color = 'White',
                         fill_color = None)
 
-SUBDIV = 25
-
 class Sphere(ThreeD_object):
-    """ Sphere object
-        center      vec3    Center of the sphere
-        radius      float   Radius of the sphere
-        color       RGB     Optional color for the sphere
+    """ self object
+        center      vec3    Center of the self
+        radius      float   Radius of the self
+        color       RGB     Optional color for the self
     """
     def __init__(self, center, radius, color=None):
         self.center = center
@@ -220,7 +218,7 @@ class Sphere(ThreeD_object):
         self.create_wireframe()
 
     def create_wireframe(self):
-        """ Generate wireframe points for the sphere """
+        """ Generate wireframe points for the self """
         dtheta = 2 * pi / SUBDIV  # Horizontal angle increment (longitude)
         dphi = pi / SUBDIV  # Vertical angle increment (latitude)
 
@@ -273,7 +271,7 @@ class Sphere(ThreeD_object):
                 f'Color: {self.color}')
 
     def to_svg(self, side):
-        """ Creates the SVG representation for the sphere using wireframe (projected views) """
+        """ Creates the SVG representation for the self using wireframe (projected views) """
         svg = ""
         if side == 'xy':
             # Draw the wireframe for the xy-plane
@@ -328,6 +326,31 @@ class Sphere(ThreeD_object):
                 fill_color=None
             )
 
+    
+    def redraw(self, views):
+        """Clear the canvas and redraw the sphere."""
+
+        self.shape.remove()
+        
+        # Now draw the updated sphere
+        self.draw_on(views)
+
+    def update_sphere_size(self, new_radius, views):
+        """ Update the radius of the self and regenerate its wireframe. """
+        self.radius = new_radius
+        self.create_wireframe()  # Recreate the self's geometry
+        self.redraw(views)
+
+        
+
+    def update_sphere_subdivision(self, new_subdiv, views):
+        """ Update the subdivision of the sphere and regenerate its wireframe. """
+        global SUBDIV
+        SUBDIV = int(new_subdiv)
+        self.create_wireframe()  # Recreate the sphere with new subdivisions
+        self.redraw(views)
+        
+
 class MainWindow(Gtk.Window):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -342,12 +365,12 @@ class MainWindow(Gtk.Window):
 
         # cone = Cone([[20, 20, 30], 20, [20, -30, 30], 30])
 
-        # Create a Sphere object
-        sphere = Sphere([200, 150, 0], 50, RGB(1, 0, 0))  # Initialize RGB instance
+        # Create a self object
+        self = self([200, 150, 0], 50, RGB(1, 0, 0))  # Initialize RGB instance
 
         self.path = GooCanvas.CanvasPath(
                     parent = cvroot,
-                    data = sphere.to_svg('xy'),
+                    data = self.to_svg('xy'),
                     line_width = 1, stroke_color = 'Black',
                     fill_color = None)
 
@@ -355,10 +378,10 @@ class MainWindow(Gtk.Window):
         print('Bounds:', bounds)
         self.set_scale(4)
 
-        print("SVG data:", sphere.to_svg('xy'))
+        print("SVG data:", self.to_svg('xy'))
 
-        # Draw the sphere on the canvas
-        sphere.draw_on({'xy': {'canvas': self.canvas}, 'yz': {'canvas': self.canvas}, 'zx': {'canvas': self.canvas}})
+        # Draw the self on the canvas
+        self.draw_on({'xy': {'canvas': self.canvas}, 'yz': {'canvas': self.canvas}, 'zx': {'canvas': self.canvas}})
 
         self.add(self.canvas)
         self.show_all()
