@@ -35,7 +35,7 @@ from povview_parser import make_pov_parser
 import pyparsing as pp
 
 
-TEST_OBJ = ['sphere', [[0.0, 0.0, 0.0], 40]]
+TEST_OBJ = [['sphere', [[0.0, 0.0, 0.0], 40]]]
 
 COLORS = {'White':  (1, 1, 1),
           'Black':  (0, 0, 0),

@@ -207,7 +207,7 @@ class Sphere(ThreeD_object):
     def __init__(self, center, radius, color=None):
         self.center = center
         self.radius = radius
-        self.shape = None  # Initialize shape to None
+        self.shapes = {}  # Initialize shape to None
         self.color = color if color else RGB(1, 0, 0)  # Default color is red if not provided
         self.tx = []  # Points for longitude lines (horizontal slices)
         self.ty = []
@@ -319,7 +319,7 @@ class Sphere(ThreeD_object):
     def draw_on(self, views):
         for view in ['xy', 'yz', 'zx']:
             root = views[view]['canvas'].get_root_item()
-            self.shape = GooCanvas.CanvasPath(
+            self.shapes[view] = GooCanvas.CanvasPath(
                 parent=root,
                 data=self.to_svg(view),
                 line_width=1, stroke_color='Black',
@@ -330,7 +330,13 @@ class Sphere(ThreeD_object):
     def redraw(self, views):
         """Clear the canvas and redraw the sphere."""
 
-        self.shape.remove()
+        # Remove old shapes
+        for view in self.shapes:
+            if self.shapes[view]:
+                self.shapes[view].remove()
+            
+        # Clear the shapes dictionary
+        self.shapes = {}
         
         # Now draw the updated sphere
         self.draw_on(views)
@@ -338,6 +344,12 @@ class Sphere(ThreeD_object):
     def update_sphere_size(self, new_radius, views):
         """ Update the radius of the self and regenerate its wireframe. """
         self.radius = new_radius
+        self.tx = []  # Clear existing points
+        self.ty = []
+        self.tz = []
+        self.bx = []
+        self.by = []
+        self.bz = []
         self.create_wireframe()  # Recreate the self's geometry
         self.redraw(views)
 
@@ -347,6 +359,12 @@ class Sphere(ThreeD_object):
         """ Update the subdivision of the sphere and regenerate its wireframe. """
         global SUBDIV
         SUBDIV = int(new_subdiv)
+        self.tx = []  # Clear existing points
+        self.ty = []
+        self.tz = []
+        self.bx = []
+        self.by = []
+        self.bz = []
         self.create_wireframe()  # Recreate the sphere with new subdivisions
         self.redraw(views)
         
