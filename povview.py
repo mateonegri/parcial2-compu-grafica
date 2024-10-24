@@ -128,6 +128,12 @@ class Views(Gtk.Grid):
         for s in self.objs:
             s.update_sphere_size(sliderValue, self.views)
 
+    def on_rotation_change(self, slider, axis):
+        angle = slider.get_value()
+        for s in self.objs:
+            if isinstance(s, Sphere):
+                s.update_rotation(axis, angle, self.views)
+
 
 
         
@@ -158,6 +164,15 @@ class MainWindow(Gtk.Window):
         size_slider_value = self.size_slider.get_value()
         self.size_slider.connect('value-changed', self.views.on_size_change)
 
+        # Rotation sliders
+        self.rotation_sliders = {}
+        for axis in ['x', 'y', 'z']:
+            slider = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL)
+            slider.set_range(0, 360)
+            slider.set_value(0)
+            slider.connect('value-changed', lambda w, a=axis: self.views.on_rotation_change(w, a))
+            self.rotation_sliders[axis] = slider
+
         grid = Gtk.Grid(vexpand = True)
         grid.attach(mm, 0, 0, 2, 1)
         grid.attach(cmd_entry, 0, 1, 2, 1)
@@ -169,6 +184,16 @@ class MainWindow(Gtk.Window):
         
         grid.attach(Gtk.Label("Size"), 0, 4, 1, 1)
         grid.attach(self.size_slider, 1, 4, 1, 1)
+
+        # Add rotation sliders
+        grid.attach(Gtk.Label("Rotate X"), 0, 5, 1, 1)
+        grid.attach(self.rotation_sliders['x'], 1, 5, 1, 1)
+        
+        grid.attach(Gtk.Label("Rotate Y"), 0, 6, 1, 1)
+        grid.attach(self.rotation_sliders['y'], 1, 6, 1, 1)
+        
+        grid.attach(Gtk.Label("Rotate Z"), 0, 7, 1, 1)
+        grid.attach(self.rotation_sliders['z'], 1, 7, 1, 1)
 
         self.add(grid)
         self.show_all()

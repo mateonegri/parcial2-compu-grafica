@@ -209,6 +209,7 @@ class Sphere(ThreeD_object):
         self.radius = radius
         self.shapes = {}  # Initialize shape to None
         self.color = color if color else RGB(1, 0, 0)  # Default color is red if not provided
+        self.rotation = {'x': 0, 'y': 0, 'z': 0}  # Store rotation angles
         self.tx = []  # Points for longitude lines (horizontal slices)
         self.ty = []
         self.tz = []
@@ -218,9 +219,17 @@ class Sphere(ThreeD_object):
         self.create_wireframe()
 
     def create_wireframe(self):
-        """ Generate wireframe points for the self """
-        dtheta = 2 * pi / SUBDIV  # Horizontal angle increment (longitude)
-        dphi = pi / SUBDIV  # Vertical angle increment (latitude)
+        """Generate wireframe points for the sphere with rotation"""
+        dtheta = 2 * pi / SUBDIV
+        dphi = pi / SUBDIV
+        
+        # Clear existing points
+        self.tx = []
+        self.ty = []
+        self.tz = []
+        self.bx = []
+        self.by = []
+        self.bz = []
 
         # Loop for horizontal divisions (longitude)
         for i in range(SUBDIV + 1):
@@ -228,41 +237,82 @@ class Sphere(ThreeD_object):
             tx = []
             ty = []
             tz = []
-            # Loop for vertical divisions (latitude)
             for j in range(SUBDIV + 1):
                 phi = j * dphi
+                # Calculate initial point
                 x = self.center[0] + self.radius * sin(phi) * cos(theta)
                 y = self.center[1] + self.radius * sin(phi) * sin(theta)
                 z = self.center[2] + self.radius * cos(phi)
-
-                tx.append(x)
-                ty.append(y)
-                tz.append(z)
+                
+                # Apply rotation
+                rotated_point = self.rotate_point([x, y, z])
+                tx.append(rotated_point[0])
+                ty.append(rotated_point[1])
+                tz.append(rotated_point[2])
 
             self.tx.append(tx)
             self.ty.append(ty)
             self.tz.append(tz)
 
-        # Loop for vertical divisions (latitude, through the poles)
+        # Loop for vertical divisions (latitude)
         for j in range(SUBDIV + 1):
             phi = j * dphi
             bx = []
             by = []
             bz = []
-            # Loop for horizontal divisions (longitude)
             for i in range(SUBDIV + 1):
                 theta = i * dtheta
                 x = self.center[0] + self.radius * sin(phi) * cos(theta)
                 y = self.center[1] + self.radius * sin(phi) * sin(theta)
                 z = self.center[2] + self.radius * cos(phi)
-
-                bx.append(x)
-                by.append(y)
-                bz.append(z)
+                
+                # Apply rotation
+                rotated_point = self.rotate_point([x, y, z])
+                bx.append(rotated_point[0])
+                by.append(rotated_point[1])
+                bz.append(rotated_point[2])
 
             self.bx.append(bx)
             self.by.append(by)
             self.bz.append(bz)
+        
+    def rotate_point(self, point):
+        """Apply rotation transformations to a point."""
+        # Convert point to numpy array for matrix operations
+        p = np.array([point[0], point[1], point[2]])
+        
+        # Create rotation matrices
+        rx = self.rotation['x']
+        ry = self.rotation['y']
+        rz = self.rotation['z']
+        
+        # Rotation matrix for X axis
+        Rx = np.array([
+            [1, 0, 0],
+            [0, np.cos(rx), -np.sin(rx)],
+            [0, np.sin(rx), np.cos(rx)]
+        ])
+        
+        # Rotation matrix for Y axis
+        Ry = np.array([
+            [np.cos(ry), 0, np.sin(ry)],
+            [0, 1, 0],
+            [-np.sin(ry), 0, np.cos(ry)]
+        ])
+        
+        # Rotation matrix for Z axis
+        Rz = np.array([
+            [np.cos(rz), -np.sin(rz), 0],
+            [np.sin(rz), np.cos(rz), 0],
+            [0, 0, 1]
+        ])
+        
+        # Apply rotations (order: Z, Y, X)
+        p = p - np.array(self.center)  # Move to origin
+        p = Rx @ Ry @ Rz @ p  # Apply rotations
+        p = p + np.array(self.center)  # Move back
+        
+        return p.tolist()
 
     def __str__(self):
         return (f'Sphere:\n'
@@ -367,6 +417,12 @@ class Sphere(ThreeD_object):
         self.bz = []
         self.create_wireframe()  # Recreate the sphere with new subdivisions
         self.redraw(views)
+
+    def update_rotation(self, axis, angle, views):
+        """Update rotation angle for specified axis and redraw"""
+        self.rotation[axis] = angle * pi / 180  # Convert degrees to radians
+        self.create_wireframe()
+        self.redraw(views)
         
 
 class MainWindow(Gtk.Window):
@@ -384,11 +440,11 @@ class MainWindow(Gtk.Window):
         # cone = Cone([[20, 20, 30], 20, [20, -30, 30], 30])
 
         # Create a self object
-        self = self([200, 150, 0], 50, RGB(1, 0, 0))  # Initialize RGB instance
+        sphere = Sphere([200, 150, 0], 50, RGB(1, 0, 0))  # Initialize RGB instance
 
         self.path = GooCanvas.CanvasPath(
                     parent = cvroot,
-                    data = self.to_svg('xy'),
+                    data = sphere.to_svg('xy'),
                     line_width = 1, stroke_color = 'Black',
                     fill_color = None)
 
@@ -396,10 +452,10 @@ class MainWindow(Gtk.Window):
         print('Bounds:', bounds)
         self.set_scale(4)
 
-        print("SVG data:", self.to_svg('xy'))
+        print("SVG data:", sphere.to_svg('xy'))
 
         # Draw the self on the canvas
-        self.draw_on({'xy': {'canvas': self.canvas}, 'yz': {'canvas': self.canvas}, 'zx': {'canvas': self.canvas}})
+        sphere.draw_on({'xy': {'canvas': self.canvas}, 'yz': {'canvas': self.canvas}, 'zx': {'canvas': self.canvas}})
 
         self.add(self.canvas)
         self.show_all()

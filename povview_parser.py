@@ -67,7 +67,7 @@ def make_pov_parser(which = 'parser'):
               pp.Optional(pigment) + pp.Suppress('}'))
 
     light_source = pp.Group(pp.Keyword('light_source') + '{' +
-                vec3 + pp.Suppress(',') + pp.Keyword('color') + color + '}')
+                vec3 + pp.Keyword('color') + color + '}')
 
     parser_basic = vec2 ^ vec3 ^ vec4 ^ sinteger ^ sfloat
     parser_with_include = sphere + light_source
