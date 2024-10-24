@@ -3,3 +3,5 @@ myenv/
 
 # Ignorar cualquier directorio '__pycache__'
 __pycache__/
+
+.DS_Store
