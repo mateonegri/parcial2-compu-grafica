@@ -29,7 +29,7 @@
 
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GooCanvas', '3.0')
+gi.require_version('GooCanvas', '2.0')
 from gi.repository import Gtk, GooCanvas
 
 from main_menu import Main_menu
