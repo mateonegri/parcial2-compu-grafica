@@ -21,6 +21,10 @@
 #  MA 02110-1301, USA.
 #
 #
+# Alumnos:
+# Mateo Negri Ocampo 2103108
+# Pedro Diaz Romagnoli 2223997
+# Manuela Simes 2103975
 
 import pyparsing as pp
 
